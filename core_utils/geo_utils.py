@@ -1,23 +1,22 @@
 """Geospatial helpers: distances, heatmaps, simple aggregations."""
 from __future__ import annotations
 
+from math import asin, cos, radians, sin, sqrt
 from typing import Any, Literal
 
 import networkx as nx
 import numpy as np
 import osmnx as ox
-
-from geopy.geocoders import Nominatim
 from geopy.exc import GeocoderTimedOut, GeocoderServiceError
+from geopy.geocoders import Nominatim
 
 ox.settings.use_cache = True
 
 EARTH_R = 6371.0
 
+
 def haversine_km(lat1: float, lon1: float, lat2: float, lon2: float) -> float:
     """Great-circle distance between two points in kilometers."""
-    from math import asin, cos, radians, sin, sqrt
-
     lat1, lon1, lat2, lon2 = map(radians, (lat1, lon1, lat2, lon2))
     dlat = lat2 - lat1
     dlon = lon2 - lon1
@@ -86,7 +85,7 @@ def build_heatmap(points, **kwargs):  # noqa: ANN001 - returns folium.Map
         sum(p[1] for p in points) / len(points),
     )
     m = folium.Map(location=center, zoom_start=kwargs.get("zoom_start", 13))
-    
+
     weighted = [
         (p[0], p[1], p[2] if len(p) > 2 else 1.0)
         for p in points
@@ -219,7 +218,7 @@ def geocode(location: str, city_hint: str = "") -> tuple[float, float] | None:
     """
     query = f"{location}, {city_hint}".strip(", ") if city_hint else location
     geolocator = Nominatim(user_agent="geo-analytics-agent/1.0", timeout=5)
-    
+
     result_coords: tuple[float, float] | None = None
     try:
         result = geolocator.geocode(query)

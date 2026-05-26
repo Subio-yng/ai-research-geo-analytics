@@ -15,13 +15,24 @@ class ConversationMemory:
     def add_user_message(self, content: str):
         self.history.append({"role": "user", "content": content})
 
-    def add_assistant_message(self, content: str, tool_calls: list | None = None):
-        msg = {"role": "assistant", "content": content or ""}
+    def add_assistant_message(self, content: str | None, tool_calls: list | None = None):
+        """Добавить сообщение ассистента.
+
+        Если есть tool_calls, content может быть None (OpenAI API так и требует —
+        пустая строка вместе с tool_calls иногда вызывает валидационные ошибки).
+        Если tool_calls нет — content приводится к строке (None → "").
+        """
         if tool_calls:
-            msg["tool_calls"] = [
-                tc.model_dump() if hasattr(tc, "model_dump") else tc
-                for tc in tool_calls
-            ]
+            msg: dict = {
+                "role": "assistant",
+                "content": content if content else None,
+                "tool_calls": [
+                    tc.model_dump() if hasattr(tc, "model_dump") else tc
+                    for tc in tool_calls
+                ],
+            }
+        else:
+            msg = {"role": "assistant", "content": content or ""}
         self.history.append(msg)
 
     def get_display_history(self) -> list[dict]:
@@ -61,14 +72,22 @@ class PersistedMemory(ConversationMemory):
 
     def _load_from_db(self):
         db_history = load_chat_history(self.chat_id)
-        if db_history:
-            self.history = db_history
-            # Гарантируем, что system prompt всегда первый
-            if not self.history or self.history[0].get("role") != "system":
-                self.history.insert(0, {"role": "system", "content": self.system_prompt})
-            # Убираем висящие tool_call-сообщения без ответов (вызвали бы ошибку API)
-            while self.history and self.history[-1].get("tool_calls"):
-                self.history.pop()
+        if not db_history:
+            return
+
+        self.history = db_history
+
+        # Гарантируем, что system prompt всегда первый
+        if not self.history or self.history[0].get("role") != "system":
+            self.history.insert(0, {"role": "system", "content": self.system_prompt})
+
+        # Удаляем висящие assistant tool_call-сообщения с конца истории.
+        while (
+            len(self.history) > 1
+            and self.history[-1].get("role") == "assistant"
+            and self.history[-1].get("tool_calls")
+        ):
+            self.history.pop()
 
     def save(self):
         """Сохраняет историю в БД — без результатов tool-вызовов (они могут быть огромными)."""

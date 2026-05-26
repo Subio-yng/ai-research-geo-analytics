@@ -14,7 +14,9 @@ Layout:
     streamlit run app/app.py
 """
 from __future__ import annotations
+import re
 import sys
+import uuid
 from pathlib import Path
 
 import streamlit as st
@@ -39,8 +41,6 @@ from map_visualization import opportunity_hex_map  # noqa: E402
 
 from streamlit_folium import st_folium
 import folium  # noqa: E402
-import re
-import uuid
 
 
 # --- page config ------------------------------------------------------------
@@ -114,7 +114,6 @@ def _init_state() -> None:
 
     # Клик по hex_id в сообщении агента приходит как ?hex_click=...
     # Перехватываем, выставляем pinned_hex_id, чистим URL, делаем rerun.
-    # Это даёт тот же эффект, что раньше делала скрытая кнопка под сообщением.
     clicked_hex = st.query_params.get("hex_click")
     if clicked_hex:
         st.session_state["pinned_hex_id"] = clicked_hex
@@ -135,8 +134,6 @@ def _init_state() -> None:
         st.session_state["pinned_hex_id"] = None
     if not st.session_state.get("opportunity_grid"):
         _restore_opportunity_grid(st.session_state["chat_id"])
-        if st.session_state.get("opportunity_grid"):
-            st.rerun()
 
 
 _init_state()

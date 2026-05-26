@@ -8,8 +8,9 @@ from __future__ import annotations
 from pathlib import Path
 
 import pandas as pd
+from rapidfuzz import fuzz, process
 
-from lib.data_types import Place, DemandPoint
+from lib.data_types import DemandPoint, Place
 
 from .geo_utils import haversine_km_array
 
@@ -75,6 +76,7 @@ def _load_demand(csv_path: str | None = None) -> pd.DataFrame:
 
 NAME_SCORE_CUTOFF = 83
 
+
 def search_places(
     category: list[str] | None = None,
     name: str | None = None,
@@ -92,8 +94,6 @@ def search_places(
         max_distance_km: keep only places within this radius from `near`.
         limit: max number of results. None = all results.
     """
-    from rapidfuzz import process, fuzz
-
     df = _load_places(csv_path)
 
     if category is not None and "amenity" in df.columns:

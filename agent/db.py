@@ -1,10 +1,11 @@
-# agent/db.py
-import sqlite3
+"""Database helpers for geo_chat (SQLite, WAL mode)."""
 import json
-from pathlib import Path
+import sqlite3
 from contextlib import contextmanager
+from pathlib import Path
 
 DB_PATH = Path("geo_chat.db")
+
 
 @contextmanager
 def get_db():
